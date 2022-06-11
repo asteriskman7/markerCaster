@@ -10,9 +10,15 @@
   </head>
 
   <body>
+    <div id='status'>Starting</div>
     <button id='bstart'>Start</button>
     <button id='bstop'>Stop</button>
-    <pre id='log'></pre>
+    <button id='bquiet'>Hush</button>
+    <div id='divpos'></div>
+    <div>
+      Max Distance (meters): <input type='number' id='inputDist' value='100'>
+    </div>
+    <div id='divclosest'></div>
     <div>Marker data, location, and descriptions from <a href='https://hmdb.org'>HMdb.org</a></div>
     <script src='./index.js'></script>
   </body>
