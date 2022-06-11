@@ -9,6 +9,8 @@ class App {
     this.initMarkers();
     this.maxDist = 100;
     this.lastPos = undefined;
+    this.markerQueue = [];
+    this.speechEndTime = -Infinity;
 
     document.getElementById('bstart').onclick = () => this.start();
     document.getElementById('bstop').onclick = () => this.stop();
@@ -38,7 +40,7 @@ class App {
   }
 
   start() {
-    //this.intervalID = setInterval(() => this.tick(), 5000);
+    this.intervalID = setInterval(() => this.tick(), 1000);
     const options = {
       enableHighAccuracy: true,
       timeout: 5000,
@@ -48,10 +50,8 @@ class App {
   }
 
   stop() {
-    /*
     clearInterval(this.intervalID);
     this.intervalID = undefined;
-    */
     navigator.geolocation.clearWatch(this.watchID);
     this.watchID = undefined;
   }
@@ -60,11 +60,18 @@ class App {
     console.log('speak');
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(msg);
+    utterance.onend = () => this.speechEnd();
     synth.speak(utterance);
+  }
+
+  speechEnd() {
+    console.log('speech end');
+    this.speechEndTime = (new Date()).getTime();
   }
 
   quiet() {
     window.speechSynthesis.cancel();
+    this.speechEndTime = (new Date()).getTime();
   }
 
   sortMarkers() {
@@ -91,15 +98,24 @@ class App {
     }
     this.lastPos = this.curPos;
 
-    document.getElementById('divpos').innerText = `@${curTime} ${pos.coords.latitude} ${pos.coords.longitude} delta=${posStep.toFixed(2)}`;
+    document.getElementById('divpos').innerHTML = `@${curTime} <a href='http://www.openstreetmap.org/?mlat=${pos.coords.latitude}&mlon=${pos.coords.longitude}#map=18/${pos.coords.latitude}/${pos.coords.longitude}&layers=C'>${pos.coords.latitude} ${pos.coords.longitude}</a> delta=${posStep.toFixed(2)}`;
     this.sortMarkers();
-    const closestMarker = this.markers[0];
 
-    if (closestMarker.dist < this.maxDist) {
-      if (this.lastSpoken !== closestMarker.id && !window.speechSynthesis.speaking) {
-        this.lastSpoken = closestMarker.id;
-        const msg = `Nearby marker found. Name: ${closestMarker.title}. Description: ${closestMarker.desc}`;
-        this.speak(closestMarker.desc);
+    for (let i = 0; i < this.markers.length; i++) {
+      const marker = this.markers[i];
+
+      if (marker.dist < this.maxDist) {
+        const timeSinceLastSeen = marker.lastSeen === undefined ? Infinity : (pos.timestamp - marker.lastSeen);
+        const timeBetweenVisits = 60*60*1000; //1hr
+        if (timeSinceLastSeen > timeBetweenVisits) {
+          marker.lastSeen = pos.timestamp;
+          const maxQueueSize = 5;
+          if (this.markerQueue.length < maxQueueSize) {
+            this.markerQueue.push(marker);
+          }
+        }
+      } else {
+        break;
       }
     }
 
@@ -131,7 +147,17 @@ class App {
   }
 
   tick() {
-    this.updateGeolocation();
+    const curTime = (new Date()).getTime();
+    const speechDelayTime = 5000;
+    if (this.markerQueue.length > 0) {
+      if (!window.speechSynthesis.speaking) {
+        if ((curTime - this.speechEndTime) > speechDelayTime) {
+          const curMarker = this.markerQueue.shift();
+          const msg = `Nearby marker found. Name: ${curMarker.title}. Description: ${curMarker.desc}`;
+          this.speak(curMarker.desc);
+        }
+      }
+    }
   }
 }
 
