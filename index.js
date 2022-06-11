@@ -1,5 +1,9 @@
 'use strict';
 
+//TODO:
+//strip html tags from descriptions
+//strip html elements like &8234; 
+
 class App {
   constructor() {
     console.log('init');
@@ -146,6 +150,10 @@ class App {
     return d;
   }
 
+  cleanDesc(rawStr) {
+    return rawStr.replace(/<[^>]+>/g, '').replace(/&#\d+;/g, ' ');
+  }
+
   tick() {
     const curTime = (new Date()).getTime();
     const speechDelayTime = 5000;
@@ -153,8 +161,8 @@ class App {
       if (!window.speechSynthesis.speaking) {
         if ((curTime - this.speechEndTime) > speechDelayTime) {
           const curMarker = this.markerQueue.shift();
-          const msg = `Nearby marker found. Name: ${curMarker.title}. Description: ${curMarker.desc}`;
-          this.speak(curMarker.desc);
+          const msg = `Nearby marker found. Name: ${curMarker.title}. Description: ${this.cleanDesc(curMarker.desc)}`;
+          this.speak(msg);
         }
       }
     }
