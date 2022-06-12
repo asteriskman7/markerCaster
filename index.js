@@ -45,7 +45,7 @@ class App {
   }
 
   acquireWakeLock() {
-    if (document.visibilityState === 'visible') {
+    if (document.visibilityState === 'visible' && this.watchID !== undefined) {
       navigator.wakeLock.request('screen').then( lock => {
         console.log('wakelock acquire');
         this.wakeLock = lock;
