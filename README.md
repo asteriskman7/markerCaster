@@ -1,8 +1,6 @@
-# htmlAppTemplate
-Barebones html app template suitable for using to start a simple project.
+# markerCaster 
+Demo webpage that announces historical markers that are physically nearby.
 
-3 files
+https://asteriskman7.github.io/markerCaster
 
-1. index.html
-1. index.js
-1. index.css
+Historical marker data from HMdb.org
