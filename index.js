@@ -15,6 +15,7 @@ class App {
     this.lastPos = undefined;
     this.markerQueue = [];
     this.speechEndTime = -Infinity;
+    this.wakeLock = undefined;
 
     document.getElementById('bstart').onclick = () => this.start();
     document.getElementById('bstop').onclick = () => this.stop();
@@ -43,6 +44,17 @@ class App {
     this.maxDist = parseFloat(document.getElementById('inputDist').value);
   }
 
+  acquireWakeLock() {
+    if (document.visibilityState === 'visible') {
+      navigator.wakeLock.request('screen').then( lock => {
+        console.log('wakelock acquire');
+        this.wakeLock = lock;
+        lock.onrelease = () => this.wakeLock = undefined;
+        document.onvisibilitychange = this.acquireWakeLock;
+      });
+    }
+  }
+
   start() {
     this.intervalID = setInterval(() => this.tick(), 1000);
     const options = {
@@ -51,6 +63,7 @@ class App {
       maximumAge: 0
     };
     this.watchID = navigator.geolocation.watchPosition((position) => this.posSuccess(position), this.posError, options);
+    this.acquireWakeLock();
   }
 
   stop() {
@@ -58,6 +71,12 @@ class App {
     this.intervalID = undefined;
     navigator.geolocation.clearWatch(this.watchID);
     this.watchID = undefined;
+    if (this.wakeLock !== undefined) {
+      this.wakeLock.release().then(() => {
+        console.log('wakelock release');
+        this.wakeLock = undefined;
+      });
+    }
   }
 
   speak(msg) {
