@@ -31,7 +31,7 @@ class App {
     this.setStatus('init');
     this.lastSpoken = undefined;
 
-    fetch('./HMdb-Markers-NC.json')
+    fetch('./HMdb-Markers-ALL.json')
       .then(response => response.json())
       .then(markers => {
         this.markers = markers;
